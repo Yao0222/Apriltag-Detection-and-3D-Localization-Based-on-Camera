@@ -5,50 +5,50 @@ import os
 import csv
 from datetime import datetime
 
-# 创建用于保存图像的文件夹
+# Create a folder to save images
 images_folder = "detected_tags_images"
 if not os.path.exists(images_folder):
     os.makedirs(images_folder)
 
-# 初始化CSV文件并写入标题行
+# Initialize CSV file and write the header row
 csv_filename = "detection_results.csv"
 with open(csv_filename, 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(["Time", "Tag ID", "Tag Position"])
 
-# 相机内参（这些值应该通过标定你的相机获得）
+# Camera intrinsic parameters (these values should be obtained by calibrating your camera)
 camera_matrix = np.array([[930.79652155, 0, 661.20967027],
                           [0, 932.27891919, 408.65175784],
                           [0, 0, 1]], dtype=np.float64)
-dist_coeffs = np.array([[4.81284473e-02, -8.86667343e-02, 6.04081268e-04, -6.77186841e-05, 2.81485370e-02]])
+dist_coeffs = np.array([[0.0481284473, -0.0886667343, 0.000604081268, -0.0000677186841, 0.0281485370]])
 
-# AprilTag的实际尺寸（米）
-tag_size = 0.16  # 修改为您的标签实际大小
+# The actual size of the AprilTag (in meters)
+tag_size = 0.16  # Modify this to the actual size of your tag
 
-cap = cv2.VideoCapture(0)  # 获取摄像头
+cap = cv2.VideoCapture(0)  # Capture from camera
 options = pl.Detector(families='tag36h11')
 
 while True:
     ret, image1 = cap.read()
     if not ret:
-        break  # 如果无法获取图像，退出循环
+        break  # Exit loop if unable to get an image
 
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # 获取当前时间
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Get the current time
 
     gray = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
     results = options.detect(gray)
     for r in results:
-        # 获取id
+        # Get the ID
         id = r.tag_id
         print(f"Detected AprilTag ID: {id}, Time: {current_time}")
 
-        # 获取四个角点的坐标
+        # Get the coordinates of the four corners
         corners = r.corners.astype(int)
-        # 对于每个角点绘制线
+        # Draw lines between each corner point
         for i in range(4):
             cv2.line(image1, tuple(corners[i - 1]), tuple(corners[i]), (255, 0, 255), 2, cv2.LINE_AA)
 
-        # 计算3D坐标
+        # Calculate 3D coordinates
         object_points = np.array([[-tag_size / 2, -tag_size / 2, 0],
                                   [tag_size / 2, -tag_size / 2, 0],
                                   [tag_size / 2, tag_size / 2, 0],
@@ -57,28 +57,29 @@ while True:
 
         tag_position = tvec.flatten()
         print("Tag position: ", tag_position)
-        # print('distance:', tag_position[2])
+        # Uncomment to print the distance: print('distance:', tag_position[2])
 
-        # 绘制AprilTag的中心坐标
+        # Draw the center coordinate of the AprilTag
         center = np.mean(corners, axis=0).astype(int)
         cv2.circle(image1, tuple(center), 5, (0, 0, 255), -1)
 
-        # 在图像上绘制文本信息
+        # Overlay text information on the image
         cv2.putText(image1, f"ID: {id}", (center[0], center[1] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-        # 保存当前检测到的信息到CSV文件
+        # Save the current detection information to the CSV file
         with open(csv_filename, 'a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([current_time, id, tag_position])
 
-        # 保存检测到标签的图像
+        # Save the image with the detected tag
         image_filename = os.path.join(images_folder, f"tag_{id}_{current_time.replace(':', '-')}.jpg")
         cv2.imwrite(image_filename, image1)
 
-    # 显示处理后的图像
+    # Display the processed image
     cv2.imshow("Apriltags", image1)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
+# Release resources and close any open windows
 cap.release()
 cv2.destroyAllWindows()

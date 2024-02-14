@@ -27,7 +27,7 @@ Ensure you have Python installed on your system. Then, install the required Pyth
 1. **Start the Script**: Run the script using Python.
 
     ```
-    python april_tag_detection.py
+    python Apriltag_Linux_optimized.py
     ```
 
 2. **Real-Time Detection**: Point your camera at AprilTags. The script automatically detects tags, processes images, and logs detection data.

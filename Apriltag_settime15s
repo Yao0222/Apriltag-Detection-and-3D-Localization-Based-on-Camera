@@ -10,11 +10,19 @@ images_folder = "detected_tags_images"
 if not os.path.exists(images_folder):
     os.makedirs(images_folder)
 
-# Initialize a CSV file and write the header row
-csv_filename = "detection_results.csv"
-with open(csv_filename, 'w', newline='') as file:
+# Initialize CSV files and write the header rows
+detection_csv_filename = os.path.join(images_folder, "detection_results.csv")
+frames_csv_filename = os.path.join(images_folder, "frame_timestamps.csv")
+
+# For detection results
+with open(detection_csv_filename, 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(["Time", "Tag ID", "Tag Position"])
+
+# For frame timestamps
+with open(frames_csv_filename, 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(["Frame Timestamp"])
 
 # Camera intrinsic parameters
 camera_matrix = np.array([[930.79652155, 0, 661.20967027],
@@ -37,6 +45,12 @@ while time.time() - start_time < duration:  # Loop for 15 seconds
         break  # Exit the loop if the image cannot be captured
 
     current_time = time.time()  # Get the current time
+
+    # Record the frame timestamp
+    with open(frames_csv_filename, 'a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([current_time])
+
     gray = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
     results = options.detect(gray)
     image_processed = False  # Flag to mark if the image has been processed
@@ -61,7 +75,7 @@ while time.time() - start_time < duration:  # Loop for 15 seconds
         cv2.circle(image1, tuple(center), 5, (0, 0, 255), -1)
         cv2.putText(image1, f"ID: {id}", (center[0], center[1] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-        with open(csv_filename, 'a', newline='') as file:
+        with open(detection_csv_filename, 'a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([current_time, id, tag_position])
 

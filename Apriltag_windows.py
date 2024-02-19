@@ -135,3 +135,52 @@ for image_filename in sorted_filenames:
 
 print("Processing and drawing completed.")
 
+
+
+import cv2
+import numpy as np
+import apriltag
+import os
+import csv
+import glob
+
+# 初始化用于追踪每个ID中心点的字典
+all_centers = {}
+
+# 新目录用于存储处理后的图片
+processed_image_folder_path = '/path/to/processed_images/'
+os.makedirs(processed_image_folder_path, exist_ok=True)
+
+# 遍历每张图片的代码...
+for image_filename in sorted_filenames:
+    image = cv2.imread(image_filename)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    results = options.detect(gray)
+    
+    image1 = image.copy()
+
+    if results:
+        for r in results:
+            id = r.tag_id
+            corners = r.corners
+            center = np.mean(corners, axis=0).astype(int)
+
+            # 如果ID不在字典中，则添加一个新的空列表
+            if id not in all_centers:
+                all_centers[id] = []
+            all_centers[id].append(center)
+
+            # 为当前标签绘制中心点
+            cv2.circle(image1, tuple(center), 5, (0, 0, 255), -1)
+            cv2.putText(image1, f"ID: {id}", (center[0], center[1] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+    # 为每个ID绘制轨迹
+    for id, centers in all_centers.items():
+        for i in range(1, len(centers)):
+            cv2.line(image1, tuple(centers[i-1]), tuple(centers[i]), (255, 0, 0), 2)
+
+    # 保存处理后的图片
+    processed_image_filename = os.path.join(processed_image_folder_path, os.path.basename(image_filename))
+    cv2.imwrite(processed_image_filename, image1)
+
+print("Processing and drawing for all IDs completed.")

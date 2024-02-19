@@ -83,3 +83,55 @@ while True:
 # Release resources and close any open windows
 cap.release()
 cv2.destroyAllWindows()
+
+
+
+
+import cv2
+import numpy as np
+import apriltag
+import os
+import csv
+import time
+import glob
+
+# Existing setup code...
+
+# Initialize an empty list to store all the center points
+all_centers = []
+
+# New directory for processed images
+processed_image_folder_path = '/media/zinc/F86FD79DA96C4494/mmtag_record_data/mmwave_tag_data/20240216_154233/processed_video/'
+os.makedirs(processed_image_folder_path, exist_ok=True)
+
+# Existing image processing loop...
+for image_filename in sorted_filenames:
+    # Existing code to process each image...
+    
+    # Initialize an empty image1 for drawing. You need to clone the original image to avoid altering it.
+    image1 = image.copy()
+    
+    if results:
+        for r in results:
+            # Existing code to process each detected tag...
+            
+            # Draw the center coordinate of the AprilTag
+            center = np.mean(r.corners, axis=0).astype(int)
+            cv2.circle(image1, tuple(center), 5, (0, 0, 255), -1)
+            
+            # Overlay text information on the image
+            cv2.putText(image1, f"ID: {r.tag_id}", (center[0], center[1] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            
+            # Append the center point to all_centers
+            all_centers.append(center)
+            
+    # Draw the trajectory
+    for i in range(1, len(all_centers)):
+        cv2.line(image1, tuple(all_centers[i-1]), tuple(all_centers[i]), (255, 0, 0), 2)
+    
+    # Save the processed image to the new directory
+    processed_image_filename = os.path.join(processed_image_folder_path, os.path.basename(image_filename))
+    cv2.imwrite(processed_image_filename, image1)
+
+print("Processing and drawing completed.")
+

@@ -1,67 +1,45 @@
 import cv2
 import os
-import time
 
-def capture_images(folder_path, interval=1, duration=40):
-    # Ensure the folder exists
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
+# 设置保存照片的路径
+save_path = '/Users/yao/Documents/Mingming LAB_intern/calibration'
+if not os.path.exists(save_path):
+    os.makedirs(save_path)
 
-    # Create a video capture object
-    cap = cv2.VideoCapture(0)
+# 设置相机的ID号（0通常是默认相机）
+camera_id = 0
+cap = cv2.VideoCapture(camera_id)
 
-    if not cap.isOpened():
-        print("Cannot open the camera")
-        return
+# 设置照片编号
+photo_number = 0
 
-    print("Press the space bar to start capturing...")
+print("按 's' 键拍照，按 'q' 键退出。")
 
-    # Display the camera image in real-time until the space bar is pressed
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Cannot read the camera image")
-            break
-        cv2.imshow("Frame", frame)
-        if cv2.waitKey(1) & 0xFF == ord(' '):  # ASCII code for the space bar
-            break
+while True:
+    # 捕获frame-by-frame
+    ret, frame = cap.read()
+    if not ret:
+        print("无法获取画面，请检查相机连接。")
+        break
 
-    start_time = time.time()
-    count = 0
+    # 显示当前帧
+    cv2.imshow('Camera', frame)
 
-    # Capture images at the specified interval and duration
-    while True:
-        ret, frame = cap.read()
+    # 等待键盘输入
+    key = cv2.waitKey(1) & 0xFF
 
-        if not ret:
-            print("Cannot read the camera image")
-            break
+    # 如果按下's'，保存一张照片
+    if key == ord('s'):
+        photo_name = f'calibration_image_{photo_number}.jpg'
+        photo_path = os.path.join(save_path, photo_name)
+        cv2.imwrite(photo_path, frame)
+        print(f'照片已保存到：{photo_path}')
+        photo_number += 1
 
-        # Get the current time
-        current_time = time.time()
+    # 如果按下'q'，退出循环
+    elif key == ord('q'):
+        break
 
-        # Save images at the given interval
-        if current_time - start_time >= interval * count:
-            # Save the image
-            img_name = f"{folder_path}/img_{count:03d}.jpg"
-            cv2.imwrite(img_name, frame)
-            print(f"Captured {img_name}")
-            count += 1
-
-        # Stop capturing after the specified duration
-        if current_time - start_time > duration:
-            break
-
-        # Continue displaying the image in real-time
-        cv2.imshow("Frame", frame)
-
-        # Press 'q' to exit
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    # Release resources and close the window
-    cap.release()
-    cv2.destroyAllWindows()
-
-# Example usage, make sure to update it to your actual path
-capture_images("/home/yao/Documents/mmwave/pic")
+# 释放摄像头并关闭所有OpenCV窗口
+cap.release()
+cv2.destroyAllWindows()
